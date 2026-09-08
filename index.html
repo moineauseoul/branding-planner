@@ -450,6 +450,7 @@
   .week-summary-item-title.due-soon{ color:var(--accent-md); font-weight:700; }
   .week-summary-item-due{ font-size:11px; color:var(--ink-faint); flex-shrink:0; }
   .req-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .detail-status-actions{ margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
   .req-actions button{ font-size:11.5px; color:var(--ink-soft); border-bottom:1px solid var(--line-strong); }
   .req-actions button:hover{ color:var(--ink); border-bottom-color:var(--ink); }
 
@@ -1628,16 +1629,16 @@
     const contentHtml = stripHtml(reqEditor.innerHTML).trim() ? reqEditor.innerHTML.trim() : "";
 
     if(editingRequestId){
-      const row = requestObjToRow({
+      const row = {
         dept: document.getElementById("req-dept").value,
         requester: document.getElementById("req-requester").value.trim(),
         title,
         content: contentHtml,
         links,
-        due: document.getElementById("req-due").value,
+        due: document.getElementById("req-due").value ? document.getElementById("req-due").value : null,
         assignee: document.getElementById("req-assignee").value.trim(),
         priority: document.getElementById("req-priority").value
-      });
+      };
       const { error } = await sb.from("requests").update(row).eq("id", editingRequestId);
       if(error){ alert("저장 실패: "+error.message); return; }
     } else {
@@ -1792,6 +1793,17 @@
   }
 
   /* ================= DETAIL POPUP (일정/요청 공용) ================= */
+  function detailStatusBtn(label, onClick){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = label;
+    b.addEventListener("click", onClick);
+    return b;
+  }
+  async function updateStatusAndRefresh(id, status){
+    await updateStatus(id, status);
+    openDetail("request", id);
+  }
   function openDetail(type, id){
     const body = document.getElementById("detail-body");
     if(type==="schedule"){
@@ -1833,7 +1845,19 @@
           ${r.due ? `<div class="detail-meta-cell"><div class="k">마감일</div><div class="v"><span class="${detailDueUrgency==="overdue"?"due-overdue":detailDueUrgency==="soon"?"due-soon":""}">${r.due}${detailDueUrgency==="overdue"?" · 지연":detailDueUrgency==="soon"?" · 임박":""}</span></div></div>` : ``}
           ${linksHtml}
         </div>
+        ${isOwner ? `<div class="req-actions detail-status-actions" id="detail-status-actions"></div>` : ``}
       `;
+      if(isOwner){
+        const statusBox = document.getElementById("detail-status-actions");
+        if(r.status==="waiting"){
+          statusBox.appendChild(detailStatusBtn("진행중으로", ()=>updateStatusAndRefresh(r.id,"progress")));
+        } else if(r.status==="progress"){
+          statusBox.appendChild(detailStatusBtn("대기로", ()=>updateStatusAndRefresh(r.id,"waiting")));
+          statusBox.appendChild(detailStatusBtn("완료로", ()=>updateStatusAndRefresh(r.id,"done")));
+        } else {
+          statusBox.appendChild(detailStatusBtn("다시 열기", ()=>updateStatusAndRefresh(r.id,"progress")));
+        }
+      }
     }
     openModal("detail-modal");
   }
