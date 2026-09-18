@@ -32,6 +32,8 @@
     --accent-etc-bg:#E0F4F6;
     --accent-neutral:#868E96;
     --accent-neutral-bg:#F1F1F0;
+    --accent-cs:#B8860B;
+    --accent-cs-bg:#F7EFD8;
     --accent-red-bg:#FCE3E3;
     --accent-teal:#0C8599;
     --accent-teal-bg:#E0F4F6;
@@ -264,6 +266,7 @@
   .request-tag.dept-plan{ border-left-color:var(--accent-plan); color:var(--accent-plan); }
   .request-tag.dept-global{ border-left-color:var(--accent-global); color:var(--accent-global); }
   .request-tag.dept-etc{ border-left-color:var(--accent-etc); color:var(--accent-etc); }
+  .request-tag.dept-cs{ border-left-color:var(--accent-cs); color:var(--accent-cs); }
   .day-more{ font-size:11px; color:var(--ink-faint); }
 
   .dept-md{ background:var(--accent-md-bg); color:var(--accent-md); }
@@ -272,6 +275,7 @@
   .dept-mkt{ background:var(--accent-mkt-bg); color:var(--accent-mkt); }
   .dept-global{ background:var(--accent-global-bg); color:var(--accent-global); }
   .dept-etc{ background:var(--accent-etc-bg); color:var(--accent-etc); }
+  .dept-cs{ background:var(--accent-cs-bg); color:var(--accent-cs); }
   .dept-dot{
     display:inline-block; width:7px; height:7px; border-radius:50%;
     margin-right:5px; flex-shrink:0;
@@ -282,6 +286,7 @@
   .dept-dot.dept-mkt{ background:var(--accent-mkt); }
   .dept-dot.dept-global{ background:var(--accent-global); }
   .dept-dot.dept-etc{ background:var(--accent-etc); }
+  .dept-dot.dept-cs{ background:var(--accent-cs); }
 
   /* 일정 배경색: 사용자가 직접 고른 hex 컬러를 인라인 스타일로 적용 (프리셋 없음) */
   .color-input-row{ display:flex; align-items:center; gap:10px; }
@@ -731,6 +736,7 @@
         <button class="dept-filter-btn" data-dept="plan">상품기획</button>
         <button class="dept-filter-btn" data-dept="global">글로벌</button>
         <button class="dept-filter-btn" data-dept="etc">브랜딩</button>
+        <button class="dept-filter-btn" data-dept="cs">CS</button>
       </div>
       <div class="req-toolbar-right">
         <input type="text" id="req-search" class="req-search" placeholder="제목·내용 검색">
@@ -829,6 +835,7 @@
             <option value="plan">상품기획</option>
             <option value="global">글로벌</option>
             <option value="etc">브랜딩</option>
+            <option value="cs">CS</option>
           </select>
         </div>
         <div class="modal-field">
@@ -952,7 +959,7 @@
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3bnRma3dkdGZ0dGhuenF6b25xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MDIyNDYsImV4cCI6MjEwNDA3ODI0Nn0.hzVI8bkYGyFMtTyi8Iplg_Avww-VuDszbnM4OTAR5vo";
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const DEPT_LABEL = { md:"온라인 MD", offline:"오프라인 MD", mkt:"마케팅", plan:"상품기획", global:"글로벌", etc:"브랜딩" };
+  const DEPT_LABEL = { md:"온라인 MD", offline:"오프라인 MD", mkt:"마케팅", plan:"상품기획", global:"글로벌", etc:"브랜딩", cs:"CS" };
   const PRIORITY_LABEL = { high:"높음", mid:"보통", low:"낮음" };
   const STATUS_LABEL = { waiting:"대기", progress:"진행중", done:"완료" };
   const LINK_TYPE_LABEL = { slack:"슬랙", sheet:"구글 시트", drive:"구글 드라이브", etc:"기타" };
