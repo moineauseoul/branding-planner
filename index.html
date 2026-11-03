@@ -320,6 +320,8 @@
   .color-input-row input[type="text"]{ width:120px; text-transform:uppercase; }
 
   /* ---------- 일정 카테고리(컬러칩) - Content Calendar와 동일한 패턴 ---------- */
+  .share-cc-label{ display:flex; align-items:center; gap:8px; font-size:13.5px; cursor:pointer; color:var(--ink); }
+  .share-cc-label input{ width:16px; height:16px; margin:0; cursor:pointer; }
   .category-chip-row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
   .category-chip{
     display:flex; align-items:center; gap:6px; padding:6px 10px 6px 8px;
@@ -853,6 +855,10 @@
         </div>
       </div>
       <div class="field-hint">종료일을 비워두면 하루짜리 일정으로 등록돼요.</div>
+      <div class="modal-field share-cc-field">
+        <label class="share-cc-label"><input type="checkbox" id="sch-share-cc"> 콘텐츠캘린더에도 표시</label>
+        <div class="field-hint" style="margin-top:4px;">체크한 일정만 콘텐츠캘린더에 읽기 전용으로 보여요. 미팅·외주 일정은 체크하지 마세요.</div>
+      </div>
       <div class="modal-footer">
         <button type="button" class="modal-cancel" data-close="schedule-modal">취소</button>
         <button type="submit" class="primary-btn">저장</button>
@@ -1012,11 +1018,11 @@
   // ---- DB row <-> 앱 내부 객체 형태 변환 ----
   function scheduleRowToObj(row){
     return { id:row.id, title:row.title, content:row.content||"",
-             startDate:row.start_date, endDate:row.end_date, color:row.color, category:row.category||null,
+             startDate:row.start_date, endDate:row.end_date, color:row.color, category:row.category||null, shareCc:!!row.share_cc,
              createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now() };
   }
   function scheduleObjToRow(s){
-    return { id:s.id, title:s.title, content:s.content||"", start_date:s.startDate, end_date:s.endDate, color:s.color, category:s.category||null };
+    return { id:s.id, title:s.title, content:s.content||"", start_date:s.startDate, end_date:s.endDate, color:s.color, category:s.category||null, share_cc:!!s.shareCc };
   }
   function requestRowToObj(row){
     return { id:row.id, dept:row.dept, requester:row.requester||"", title:row.title, content:row.content||"",
@@ -1440,6 +1446,7 @@
     selectedScheduleColor = DEFAULT_SCHEDULE_COLOR;
     setColorInputs(selectedScheduleColor);
     selectScheduleCategory(null);
+    document.getElementById("sch-share-cc").checked = false;
     openModal("schedule-modal");
   }
   function openScheduleModalForEdit(s){
@@ -1449,6 +1456,7 @@
     document.getElementById("sch-content").value = s.content||"";
     document.getElementById("sch-start").value = s.startDate||s.date||"";
     document.getElementById("sch-end").value = (s.endDate && s.endDate!==(s.startDate||s.date)) ? s.endDate : "";
+    document.getElementById("sch-share-cc").checked = !!s.shareCc;
     if(s.category && CATEGORY_DEFS.some(c=>c.key===s.category)){
       selectScheduleCategory(s.category);
     } else {
@@ -1674,7 +1682,8 @@
         startDate: start,
         endDate: end || start,
         color: selectedScheduleColor,
-        category: selectedScheduleCategory
+        category: selectedScheduleCategory,
+        shareCc: document.getElementById("sch-share-cc").checked
       });
       delete row.id;
       const { error } = await sb.from("schedules").update(row).eq("id", editingScheduleId);
@@ -1684,6 +1693,7 @@
         id: uid(),
         color: selectedScheduleColor,
         category: selectedScheduleCategory,
+        shareCc: document.getElementById("sch-share-cc").checked,
         title,
         content: document.getElementById("sch-content").value.trim(),
         startDate: start,
