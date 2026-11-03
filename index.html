@@ -85,6 +85,16 @@
     padding:32px 40px 80px;
   }
 
+  /* ---------- 사이트 이동 네비게이션 ---------- */
+  .site-nav{
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    font-size:12.5px; color:var(--ink-faint); margin-bottom:14px;
+  }
+  .site-nav a{ color:var(--ink-soft); text-decoration:none; padding:2px 0; border-bottom:1px solid transparent; }
+  .site-nav a:hover{ color:var(--ink); border-bottom-color:var(--ink-soft); }
+  .site-nav a.current{ color:var(--ink); font-weight:700; border-bottom-color:var(--ink); }
+  .site-nav .site-nav-sep{ color:var(--line-strong); }
+
   /* ---------- Header ---------- */
   .top{
     display:flex;
@@ -296,18 +306,30 @@
     cursor:pointer;
   }
   .color-input-row input[type="text"]{ width:120px; text-transform:uppercase; }
-  .fav-color-row{ display:flex; align-items:center; gap:12px; margin-top:10px; }
-  .fav-color-list{ display:flex; gap:8px; }
-  .fav-color-swatch{
-    width:24px; height:24px;
-    border-radius:50%;
-    border:1px solid var(--line-strong);
-    cursor:pointer;
-    padding:0;
+
+  /* ---------- 일정 카테고리(컬러칩) - Content Calendar와 동일한 패턴 ---------- */
+  .category-chip-row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .category-chip{
+    display:flex; align-items:center; gap:6px; padding:6px 10px 6px 8px;
+    border:1px solid var(--line-strong); border-radius:999px; cursor:pointer;
+    font-size:12.5px; color:var(--ink-soft); background:var(--surface); user-select:none;
   }
-  .fav-color-swatch.empty{ background:var(--bg); border-style:dashed; cursor:default; }
-  .fav-color-save-btn{ font-size:12px; color:var(--ink-soft); border-bottom:1px solid var(--line-strong); }
-  .fav-color-save-btn:hover{ color:var(--ink); border-bottom-color:var(--ink); }
+  .category-chip .cat-dot{ width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+  .category-chip.sel{ border-color:var(--ink); color:var(--ink); font-weight:700; background:var(--bg); }
+  .cat-edit-toggle{
+    margin-left:auto; font-size:11.5px; color:var(--ink-soft); cursor:pointer; text-decoration:underline;
+    background:none; border:none; padding:4px;
+  }
+  .cat-edit-toggle:hover{ color:var(--ink); }
+  .cat-edit-panel{
+    display:none; margin-top:10px; padding:12px; border:1px solid var(--line-strong);
+    border-radius:var(--radius); background:var(--bg);
+  }
+  .cat-edit-panel.open{ display:block; }
+  .cat-edit-row{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .cat-edit-row:last-child{ margin-bottom:0; }
+  .cat-edit-row label{ flex:1; font-size:12.5px; color:var(--ink); }
+  .cat-edit-row input[type="color"]{ width:40px; height:30px; padding:2px; cursor:pointer; }
 
   /* ---------- Day / week panel ---------- */
   .month-view-layout{
@@ -538,8 +560,8 @@
     background:var(--surface);
     border-radius:calc(var(--radius) + 3px);
     width:100%;
-    max-width:480px;
-    max-height:88vh;
+    max-width:560px;
+    max-height:94vh;
     overflow-y:auto;
     padding:24px;
   }
@@ -668,6 +690,14 @@
 <body>
 <div class="wrap">
 
+  <div class="site-nav">
+    <a href="index.html" class="current">Branding Planner</a>
+    <span class="site-nav-sep">·</span>
+    <a href="instagram-calendar.html">Content Calendar</a>
+    <span class="site-nav-sep">·</span>
+    <a href="https://www.instagram.com/folnua_official/" target="_blank" rel="noopener noreferrer">폴뉴아 공식 인스타그램 ↗</a>
+  </div>
+
   <div class="top">
     <div>
       <div class="brand-title">📆 Branding Planner</div>
@@ -788,14 +818,16 @@
         <textarea id="sch-content"></textarea>
       </div>
       <div class="modal-field">
-        <label for="sch-color-hex">배경색</label>
+        <label>카테고리</label>
+        <div class="category-chip-row" id="sch-category-chip-row" style="margin-bottom:6px;"></div>
+        <button type="button" class="cat-edit-toggle" id="sch-cat-edit-toggle">컬러칩 수정</button>
+        <div class="cat-edit-panel" id="sch-cat-edit-panel"></div>
+      </div>
+      <div class="modal-field">
+        <label for="sch-color-hex">색상 (카테고리 선택 시 자동 지정, '없음' 선택 시 직접 지정)</label>
         <div class="color-input-row">
           <input type="color" id="sch-color-input" value="#D9822B">
           <input type="text" id="sch-color-hex" value="#D9822B" maxlength="7">
-        </div>
-        <div class="fav-color-row">
-          <div class="fav-color-list" id="fav-color-list"></div>
-          <button type="button" class="fav-color-save-btn" id="fav-color-save">★ 즐겨찾기에 저장</button>
         </div>
       </div>
       <div class="modal-row">
@@ -968,11 +1000,11 @@
   // ---- DB row <-> 앱 내부 객체 형태 변환 ----
   function scheduleRowToObj(row){
     return { id:row.id, title:row.title, content:row.content||"",
-             startDate:row.start_date, endDate:row.end_date, color:row.color,
+             startDate:row.start_date, endDate:row.end_date, color:row.color, category:row.category||null,
              createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now() };
   }
   function scheduleObjToRow(s){
-    return { id:s.id, title:s.title, content:s.content||"", start_date:s.startDate, end_date:s.endDate, color:s.color };
+    return { id:s.id, title:s.title, content:s.content||"", start_date:s.startDate, end_date:s.endDate, color:s.color, category:s.category||null };
   }
   function requestRowToObj(row){
     return { id:row.id, dept:row.dept, requester:row.requester||"", title:row.title, content:row.content||"",
@@ -1037,45 +1069,92 @@
     }
   });
 
-  /* ---------------- 즐겨찾기 색상 (최대 3개, localStorage에 별도 저장) ---------------- */
-  const FAV_COLOR_KEY = "folnua-desk-planner-fav-colors";
-  function loadFavoriteColors(){
-    try{
-      const raw = localStorage.getItem(FAV_COLOR_KEY);
-      const arr = raw ? JSON.parse(raw) : [];
-      return Array.isArray(arr) ? arr.slice(0,3) : [];
-    }catch(e){ return []; }
+  /* ---------------- 일정 카테고리(컬러칩) - Content Calendar와 동일한 패턴/저장소 공유 ---------------- */
+  const CATEGORY_DEFS = [
+    { key:"offline",   label:"오프라인", def:"#FF6B6B" },
+    { key:"online",    label:"온라인",   def:"#4D96FF" },
+    { key:"marketing", label:"마케팅",   def:"#FFB84D" },
+    { key:"branding",  label:"브랜딩",   def:"#9B6BFF" }
+  ];
+  const CATEGORY_STORAGE_KEY = "cc_category_colors_v1"; // Content Calendar와 같은 키 — 같은 브라우저라면 색상이 함께 맞춰집니다
+  let categoryColors = {};
+  (function loadCategoryColors(){
+    let saved = {};
+    try{ saved = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY) || "{}"); }catch(e){ saved = {}; }
+    CATEGORY_DEFS.forEach(c=>{ categoryColors[c.key] = saved[c.key] || c.def; });
+  })();
+  function saveCategoryColors(){
+    try{ localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(categoryColors)); }catch(e){}
   }
-  let favoriteColors = loadFavoriteColors();
-  function renderFavoriteColors(){
-    const wrap = document.getElementById("fav-color-list");
-    wrap.innerHTML = "";
-    for(let i=0;i<3;i++){
-      const hex = favoriteColors[i];
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "fav-color-swatch" + (hex ? "" : " empty");
-      if(hex){
-        btn.style.background = hex;
-        btn.title = hex;
-        btn.addEventListener("click", ()=>{
-          selectedScheduleColor = hex;
-          setColorInputs(hex);
-        });
-      } else {
-        btn.disabled = true;
-        btn.title = "빈 즐겨찾기 슬롯";
-      }
-      wrap.appendChild(btn);
+
+  let selectedScheduleCategory = null; // null = 직접 지정("없음")
+
+  function setManualScheduleColorEnabled(enabled){
+    document.getElementById("sch-color-input").disabled = !enabled;
+    document.getElementById("sch-color-hex").disabled = !enabled;
+  }
+
+  function selectScheduleCategory(key){
+    selectedScheduleCategory = key;
+    renderScheduleCategoryChips();
+    if(key){
+      selectedScheduleColor = categoryColors[key];
+      setColorInputs(selectedScheduleColor);
+      setManualScheduleColorEnabled(false);
+    } else {
+      setManualScheduleColorEnabled(true);
     }
   }
-  document.getElementById("fav-color-save").addEventListener("click", ()=>{
-    const hex = selectedScheduleColor.toUpperCase();
-    favoriteColors = [hex, ...favoriteColors.filter(c=>c.toUpperCase()!==hex)].slice(0,3);
-    localStorage.setItem(FAV_COLOR_KEY, JSON.stringify(favoriteColors));
-    renderFavoriteColors();
+
+  function renderScheduleCategoryChips(){
+    const row = document.getElementById("sch-category-chip-row");
+    row.innerHTML = "";
+    const noneChip = document.createElement("div");
+    noneChip.className = "category-chip" + (selectedScheduleCategory===null ? " sel" : "");
+    noneChip.innerHTML = `<span class="cat-dot" style="background:transparent;border:1px solid var(--line-strong);"></span>없음(직접 지정)`;
+    noneChip.addEventListener("click", ()=> selectScheduleCategory(null));
+    row.appendChild(noneChip);
+    CATEGORY_DEFS.forEach(c=>{
+      const chip = document.createElement("div");
+      chip.className = "category-chip" + (selectedScheduleCategory===c.key ? " sel" : "");
+      chip.innerHTML = `<span class="cat-dot" style="background:${categoryColors[c.key]};"></span>${c.label}`;
+      chip.addEventListener("click", ()=> selectScheduleCategory(c.key));
+      row.appendChild(chip);
+    });
+  }
+
+  function renderScheduleCategoryEditPanel(){
+    const panel = document.getElementById("sch-cat-edit-panel");
+    panel.innerHTML = "";
+    CATEGORY_DEFS.forEach(c=>{
+      const row = document.createElement("div");
+      row.className = "cat-edit-row";
+      const input = document.createElement("input");
+      input.type = "color";
+      input.value = categoryColors[c.key];
+      input.addEventListener("input", ()=>{
+        categoryColors[c.key] = input.value;
+        saveCategoryColors();
+        renderScheduleCategoryChips();
+        if(selectedScheduleCategory === c.key){
+          selectedScheduleColor = input.value;
+          setColorInputs(input.value);
+        }
+        renderCalendar();
+      });
+      const label = document.createElement("label");
+      label.textContent = c.label;
+      row.appendChild(label);
+      row.appendChild(input);
+      panel.appendChild(row);
+    });
+  }
+  renderScheduleCategoryEditPanel();
+  renderScheduleCategoryChips();
+
+  document.getElementById("sch-cat-edit-toggle").addEventListener("click", ()=>{
+    document.getElementById("sch-cat-edit-panel").classList.toggle("open");
   });
-  renderFavoriteColors();
 
   let currentLinks = []; // [{type, url}] - 요청 모달에서 편집 중인 링크 목록
 
@@ -1340,6 +1419,7 @@
     document.getElementById("sch-end").value = "";
     selectedScheduleColor = DEFAULT_SCHEDULE_COLOR;
     setColorInputs(selectedScheduleColor);
+    selectScheduleCategory(null);
     openModal("schedule-modal");
   }
   function openScheduleModalForEdit(s){
@@ -1349,8 +1429,13 @@
     document.getElementById("sch-content").value = s.content||"";
     document.getElementById("sch-start").value = s.startDate||s.date||"";
     document.getElementById("sch-end").value = (s.endDate && s.endDate!==(s.startDate||s.date)) ? s.endDate : "";
-    selectedScheduleColor = resolveScheduleColor(s.color);
-    setColorInputs(selectedScheduleColor);
+    if(s.category && CATEGORY_DEFS.some(c=>c.key===s.category)){
+      selectScheduleCategory(s.category);
+    } else {
+      selectedScheduleColor = resolveScheduleColor(s.color);
+      setColorInputs(selectedScheduleColor);
+      selectScheduleCategory(null);
+    }
     openModal("schedule-modal");
   }
 
@@ -1568,7 +1653,8 @@
         content: document.getElementById("sch-content").value.trim(),
         startDate: start,
         endDate: end || start,
-        color: selectedScheduleColor
+        color: selectedScheduleColor,
+        category: selectedScheduleCategory
       });
       delete row.id;
       const { error } = await sb.from("schedules").update(row).eq("id", editingScheduleId);
@@ -1577,6 +1663,7 @@
       const row = scheduleObjToRow({
         id: uid(),
         color: selectedScheduleColor,
+        category: selectedScheduleCategory,
         title,
         content: document.getElementById("sch-content").value.trim(),
         startDate: start,
