@@ -320,8 +320,22 @@
   .color-input-row input[type="text"]{ width:120px; text-transform:uppercase; }
 
   /* ---------- 일정 카테고리(컬러칩) - Content Calendar와 동일한 패턴 ---------- */
-  .share-cc-label{ display:flex; align-items:center; gap:8px; font-size:13.5px; cursor:pointer; color:var(--ink); }
-  .share-cc-label input{ width:16px; height:16px; margin:0; cursor:pointer; }
+  .modal-field .share-cc-label, .share-cc-label{
+    display:flex; align-items:center; gap:8px; margin:0;
+    font-size:13.5px; line-height:1; color:var(--ink); cursor:pointer; user-select:none;
+  }
+  .share-cc-text{ display:block; line-height:16px; transform:translateY(1px); }
+  .share-cc-label input[type="checkbox"]{
+    -webkit-appearance:none; appearance:none;
+    width:16px; height:16px; min-width:16px; padding:0; margin:0; flex-shrink:0;
+    border:1.5px solid var(--line-strong); border-radius:3px; background:var(--surface);
+    cursor:pointer; position:relative; display:inline-block;
+  }
+  .share-cc-label input[type="checkbox"]:checked{ background:#1A1A1A; border-color:#1A1A1A; }
+  .share-cc-label input[type="checkbox"]:checked::after{
+    content:""; position:absolute; left:4px; top:1px; width:4px; height:8px;
+    border:solid #fff; border-width:0 1.8px 1.8px 0; transform:rotate(45deg);
+  }
   .category-chip-row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
   .category-chip{
     display:flex; align-items:center; gap:6px; padding:6px 10px 6px 8px;
@@ -854,10 +868,8 @@
           <input type="date" id="sch-end">
         </div>
       </div>
-      <div class="field-hint">종료일을 비워두면 하루짜리 일정으로 등록돼요.</div>
       <div class="modal-field share-cc-field">
-        <label class="share-cc-label"><input type="checkbox" id="sch-share-cc"> 콘텐츠캘린더에도 표시</label>
-        <div class="field-hint" style="margin-top:4px;">체크한 일정만 콘텐츠캘린더에 읽기 전용으로 보여요. 미팅·외주 일정은 체크하지 마세요.</div>
+        <label class="share-cc-label"><input type="checkbox" id="sch-share-cc"><span class="share-cc-text">콘텐츠캘린더에도 표시</span></label>
       </div>
       <div class="modal-footer">
         <button type="button" class="modal-cancel" data-close="schedule-modal">취소</button>
