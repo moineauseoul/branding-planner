@@ -18,6 +18,18 @@
     --ink-faint:#9C9C9C;
     --line:#E6E5E1;
     --line-strong:#D8D6D0;
+    --part-brand:#A47C91;
+    --part-brand-bg:#F0EAED;
+    --part-mkt:#C49B65;
+    --part-mkt-bg:#F6EFE6;
+    --part-online:#7898B5;
+    --part-online-bg:#E9EFF3;
+    --part-offline:#7D9B89;
+    --part-offline-bg:#EAEFEC;
+    --part-plan:#9186AE;
+    --part-plan-bg:#EDECF2;
+    --part-etc:#AAAAAA;
+    --part-etc-bg:#F1F1F1;
     --accent-md:#D9822B;
     --accent-md-bg:#FBEEDD;
     --accent-offline:#C2568B;
@@ -270,33 +282,33 @@
     padding:3px 6px 3px 7px;
     font-weight:600;
   }
-  .request-tag.dept-md{ border-left-color:var(--accent-md); color:var(--accent-md); }
-  .request-tag.dept-offline{ border-left-color:var(--accent-offline); color:var(--accent-offline); }
-  .request-tag.dept-mkt{ border-left-color:var(--accent-mkt); color:var(--accent-mkt); }
-  .request-tag.dept-plan{ border-left-color:var(--accent-plan); color:var(--accent-plan); }
-  .request-tag.dept-global{ border-left-color:var(--accent-global); color:var(--accent-global); }
-  .request-tag.dept-etc{ border-left-color:var(--accent-etc); color:var(--accent-etc); }
-  .request-tag.dept-cs{ border-left-color:var(--accent-cs); color:var(--accent-cs); }
+  .request-tag.dept-md{ border-left-color:var(--part-online); color:var(--part-online); }
+  .request-tag.dept-offline{ border-left-color:var(--part-offline); color:var(--part-offline); }
+  .request-tag.dept-mkt{ border-left-color:var(--part-mkt); color:var(--part-mkt); }
+  .request-tag.dept-plan{ border-left-color:var(--part-plan); color:var(--part-plan); }
+  .request-tag.dept-global{ border-left-color:var(--part-etc); color:var(--part-etc); }
+  .request-tag.dept-etc{ border-left-color:var(--part-brand); color:var(--part-brand); }
+  .request-tag.dept-cs{ border-left-color:var(--part-etc); color:var(--part-etc); }
   .day-more{ font-size:11px; color:var(--ink-faint); }
 
-  .dept-md{ background:var(--accent-md-bg); color:var(--accent-md); }
-  .dept-offline{ background:var(--accent-offline-bg); color:var(--accent-offline); }
-  .dept-plan{ background:var(--accent-plan-bg); color:var(--accent-plan); }
-  .dept-mkt{ background:var(--accent-mkt-bg); color:var(--accent-mkt); }
-  .dept-global{ background:var(--accent-global-bg); color:var(--accent-global); }
-  .dept-etc{ background:var(--accent-etc-bg); color:var(--accent-etc); }
-  .dept-cs{ background:var(--accent-cs-bg); color:var(--accent-cs); }
+  .dept-md{ background:var(--part-online-bg); color:var(--part-online); }
+  .dept-offline{ background:var(--part-offline-bg); color:var(--part-offline); }
+  .dept-plan{ background:var(--part-plan-bg); color:var(--part-plan); }
+  .dept-mkt{ background:var(--part-mkt-bg); color:var(--part-mkt); }
+  .dept-global{ background:var(--part-etc-bg); color:var(--part-etc); }
+  .dept-etc{ background:var(--part-brand-bg); color:var(--part-brand); }
+  .dept-cs{ background:var(--part-etc-bg); color:var(--part-etc); }
   .dept-dot{
     display:inline-block; width:7px; height:7px; border-radius:50%;
     margin-right:5px; flex-shrink:0;
   }
-  .dept-dot.dept-md{ background:var(--accent-md); }
-  .dept-dot.dept-offline{ background:var(--accent-offline); }
-  .dept-dot.dept-plan{ background:var(--accent-plan); }
-  .dept-dot.dept-mkt{ background:var(--accent-mkt); }
-  .dept-dot.dept-global{ background:var(--accent-global); }
-  .dept-dot.dept-etc{ background:var(--accent-etc); }
-  .dept-dot.dept-cs{ background:var(--accent-cs); }
+  .dept-dot.dept-md{ background:var(--part-online); }
+  .dept-dot.dept-offline{ background:var(--part-offline); }
+  .dept-dot.dept-plan{ background:var(--part-plan); }
+  .dept-dot.dept-mkt{ background:var(--part-mkt); }
+  .dept-dot.dept-global{ background:var(--part-etc); }
+  .dept-dot.dept-etc{ background:var(--part-brand); }
+  .dept-dot.dept-cs{ background:var(--part-etc); }
 
   /* 일정 배경색: 사용자가 직접 고른 hex 컬러를 인라인 스타일로 적용 (프리셋 없음) */
   .color-input-row{ display:flex; align-items:center; gap:10px; }
@@ -760,12 +772,12 @@
     <div class="req-toolbar">
       <div class="dept-filters" id="dept-filters">
         <button class="dept-filter-btn active" data-dept="all">전체</button>
+        <button class="dept-filter-btn" data-dept="etc">브랜딩</button>
+        <button class="dept-filter-btn" data-dept="mkt">마케팅</button>
         <button class="dept-filter-btn" data-dept="md">온라인 MD</button>
         <button class="dept-filter-btn" data-dept="offline">오프라인 MD</button>
-        <button class="dept-filter-btn" data-dept="mkt">마케팅</button>
         <button class="dept-filter-btn" data-dept="plan">상품기획</button>
         <button class="dept-filter-btn" data-dept="global">글로벌</button>
-        <button class="dept-filter-btn" data-dept="etc">브랜딩</button>
         <button class="dept-filter-btn" data-dept="cs">CS</button>
       </div>
       <div class="req-toolbar-right">
@@ -861,12 +873,12 @@
         <div class="modal-field">
           <label for="req-dept">부서</label>
           <select id="req-dept">
+            <option value="etc">브랜딩</option>
+            <option value="mkt">마케팅</option>
             <option value="md">온라인 MD</option>
             <option value="offline">오프라인 MD</option>
-            <option value="mkt">마케팅</option>
             <option value="plan">상품기획</option>
             <option value="global">글로벌</option>
-            <option value="etc">브랜딩</option>
             <option value="cs">CS</option>
           </select>
         </div>
@@ -1071,12 +1083,14 @@
 
   /* ---------------- 일정 카테고리(컬러칩) - Content Calendar와 동일한 패턴/저장소 공유 ---------------- */
   const CATEGORY_DEFS = [
-    { key:"offline",   label:"오프라인", def:"#FF6B6B" },
-    { key:"online",    label:"온라인",   def:"#4D96FF" },
-    { key:"marketing", label:"마케팅",   def:"#FFB84D" },
-    { key:"branding",  label:"브랜딩",   def:"#9B6BFF" }
+    { key:"branding",  label:"브랜딩",   def:"#A47C91" },
+    { key:"marketing", label:"마케팅",   def:"#C49B65" },
+    { key:"online",    label:"온라인",   def:"#7898B5" },
+    { key:"offline",   label:"오프라인", def:"#7D9B89" },
+    { key:"product",   label:"상품기획", def:"#9186AE" },
+    { key:"etc",       label:"기타",     def:"#AAAAAA" }
   ];
-  const CATEGORY_STORAGE_KEY = "cc_category_colors_v1"; // Content Calendar와 같은 키 — 같은 브라우저라면 색상이 함께 맞춰집니다
+  const CATEGORY_STORAGE_KEY = "cc_category_colors_v2"; // Content Calendar와 같은 키 — 같은 브라우저라면 색상이 함께 맞춰집니다
   let categoryColors = {};
   (function loadCategoryColors(){
     let saved = {};
@@ -1366,6 +1380,12 @@
   /* ---------------- MODAL HELPERS ---------------- */
   function openModal(id){ document.getElementById(id).classList.add("open"); }
   function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+
+  /* ESC 키로 열려 있는 모달 닫기 */
+  document.addEventListener("keydown", e=>{
+    if(e.key !== "Escape") return;
+    document.querySelectorAll(".modal-overlay.open").forEach(m=> closeModal(m.id));
+  });
   document.querySelectorAll("[data-close]").forEach(btn=>{
     btn.addEventListener("click", ()=> closeModal(btn.dataset.close));
   });
