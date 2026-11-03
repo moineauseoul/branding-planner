@@ -218,7 +218,10 @@
     position:absolute;
     inset:0;
     pointer-events:none;
+    z-index:2; /* 선택된 날짜 셀(z-index:1) 위에 막대가 항상 보이도록 */
   }
+  .day-cell.blank{ background:var(--bg); cursor:default; }
+  .day-cell.blank:hover{ background:var(--bg); }
   .month-bar{
     position:absolute;
     height:24px;
@@ -1501,13 +1504,13 @@
 
     for(let i=0;i<totalCells;i++){
       const dayNum = i - startOffset + 1;
-      let cellDate, muted=false;
+      let cellDate, muted=false, blank=false;
       if(dayNum < 1){
         cellDate = new Date(year, month-1, daysInPrevMonth + dayNum);
         muted = true;
       } else if(dayNum > daysInMonth){
         cellDate = new Date(year, month+1, dayNum - daysInMonth);
-        muted = true;
+        muted = true; blank = true; // 다음 달 날짜는 미리 보여주지 않음
       } else {
         cellDate = new Date(year, month, dayNum);
       }
@@ -1517,12 +1520,13 @@
 
       const weekIdx = Math.floor(i/7);
       if(!weekDates[weekIdx]) weekDates[weekIdx] = [];
-      weekDates[weekIdx].push(dateStr);
+      if(!blank) weekDates[weekIdx].push(dateStr); // 막대는 해당 월 끝에서 잘림
 
       const cell = document.createElement("div");
-      cell.className = "day-cell" + (muted?" muted":"") + (dateStr===todayStr()?" today":"") + (dateStr===selectedDate?" selected":"");
+      cell.className = "day-cell" + (blank?" blank":"") + (muted?" muted":"") + (dateStr===todayStr()?" today":"") + (dateStr===selectedDate?" selected":"");
       cell.dataset.date = dateStr;
       cellByDate[dateStr] = cell;
+      if(blank){ monthGridEl.appendChild(cell); continue; }
 
       const numEl = document.createElement("div");
       numEl.className = "day-num" + (isWeekend?" weekend":"");
