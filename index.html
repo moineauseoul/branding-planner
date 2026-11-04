@@ -538,7 +538,7 @@
     font-size:13px;
     line-height:1.6;
     color:#2b2b2b;
-    white-space:pre-wrap;
+    white-space:normal;
     word-break:break-word;
     transition:transform .15s ease;
   }
@@ -627,6 +627,32 @@
   .field-hint{ font-size:11px; color:var(--ink-faint); margin-top:4px; }
   .owner-only-hidden{ display:none; }
   #login-error{ color:var(--danger); }
+  /* ===== 리치 텍스트 편집기 (굵게/기울임/밑줄/취소선 + 자주 쓰는 이모지) ===== */
+  .rx-wrap{ border:1px solid var(--line-strong,#D8D6D0); border-radius:6px; background:#fff; }
+  .rx-wrap:focus-within{ border-color:#1A1A1A; }
+  .rx-toolbar{ display:flex; align-items:center; gap:4px; padding:6px 8px; border-bottom:1px solid var(--line,#ECEAE4); }
+  .rx-btn{ width:28px; height:28px; border:1px solid transparent; background:none; border-radius:4px; cursor:pointer; font-size:13px; color:#555; font-family:inherit; display:flex; align-items:center; justify-content:center; padding:0; }
+  .rx-btn:hover{ background:#F3F1EC; color:#1A1A1A; }
+  .rx-btn.on{ background:#1A1A1A; color:#fff; }
+  .rx-sep{ width:1px; height:16px; background:var(--line,#ECEAE4); margin:0 4px; }
+  .rx-editor{ padding:10px 12px; min-height:90px; max-height:320px; overflow-y:auto; outline:none; font-size:13.5px; line-height:1.55; word-break:break-word; color:var(--ink,#1A1A1A); text-align:left; }
+  .rx-editor.rx-empty::before{ content:attr(data-ph); color:#A8A59E; pointer-events:none; }
+  .rx-wrap.rx-disabled .rx-toolbar, .rx-wrap.rx-disabled .rx-emoji-panel{ display:none; }
+  .rx-wrap.rx-disabled{ background:transparent; }
+  .rx-emoji-panel{ padding:10px 12px; border-bottom:1px solid var(--line,#ECEAE4); background:#FAF9F6; font-size:12px; }
+  .rx-emoji-list{ display:flex; flex-wrap:wrap; gap:6px; }
+  .rx-emo{ position:relative; width:34px; height:34px; font-size:19px; border:1px solid var(--line-strong,#D8D6D0); background:#fff; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:inherit; padding:0; }
+  .rx-emo:hover{ background:#F3F1EC; }
+  .rx-emo.sel{ border-color:#1A1A1A; box-shadow:0 0 0 1px #1A1A1A; }
+  .rx-emo .rx-x{ position:absolute; top:-6px; right:-6px; width:16px; height:16px; border-radius:50%; background:#E03131; color:#fff; font-size:10px; line-height:16px; text-align:center; }
+  .rx-emoji-foot{ display:flex; align-items:center; gap:6px; margin-top:10px; flex-wrap:wrap; }
+  .rx-emoji-foot input.rx-emo-input{ width:110px; flex:none; padding:5px 8px; border:1px solid var(--line-strong,#D8D6D0); border-radius:4px; font-size:13px; background:#fff; }
+  .rx-mini{ padding:4px 11px; border:1px solid var(--line-strong,#D8D6D0); background:#fff; border-radius:999px; font-size:11.5px; cursor:pointer; font-family:inherit; color:#444; width:auto; }
+  .rx-mini.primary{ background:#1A1A1A; color:#fff; border-color:#1A1A1A; }
+  .rx-mini[disabled]{ opacity:.4; cursor:default; }
+  .rx-count{ margin-left:auto; color:#8A8A8A; }
+  .rx-hint{ color:#8A8A8A; margin-top:8px; line-height:1.5; }
+  .rx-view{ word-break:break-word; }
   .rte-toolbar{ display:flex; gap:6px; align-items:center; margin-bottom:6px; }
   .rte-btn{
     width:28px; height:28px;
@@ -914,13 +940,7 @@
       </div>
       <div class="modal-field">
         <label>내용</label>
-        <div class="rte-toolbar">
-          <button type="button" class="rte-btn" data-cmd="bold"><b>B</b></button>
-          <button type="button" class="rte-btn rte-italic" data-cmd="italic"><i>I</i></button>
-          <button type="button" class="rte-btn rte-underline" data-cmd="underline"><u>U</u></button>
-          <button type="button" class="rte-btn rte-strike" data-cmd="strikeThrough"><s>S</s></button>
-        </div>
-        <div id="req-content-editor" class="rte-editor" contenteditable="true"></div>
+        <textarea id="req-content" data-minh="110"></textarea>
       </div>
       <div class="modal-field">
         <label>링크</label>
@@ -1296,7 +1316,7 @@
         }
 
         const text = document.createElement("div");
-        text.textContent = m.content;
+        text.innerHTML = RTE.html(m.content);
         note.appendChild(text);
 
         const date = document.createElement("div");
@@ -1378,15 +1398,205 @@
     return div.textContent || "";
   }
 
-  /* ---------------- 요청 내용 리치 텍스트 편집기 (굵게/기울임/밑줄) ---------------- */
-  const reqEditor = document.getElementById("req-content-editor");
-  document.querySelectorAll(".rte-btn").forEach(btn=>{
-    btn.addEventListener("mousedown", e=> e.preventDefault());
-    btn.addEventListener("click", ()=>{
-      reqEditor.focus();
-      document.execCommand(btn.dataset.cmd, false, null);
-    });
-  });
+  /* ================= 리치 텍스트 (굵게/기울임/밑줄/취소선 + 자주 쓰는 이모지) ================= */
+  const RTE = (function(){
+    const HTML_RE = /<(b|i|u|s|strong|em|strike|del|br|div|p)[\s>\/]/i;
+    const EMOJI_KEY = "fav_emojis_v1", EMOJI_MAX = 10;
+    const EMOJI_DEFAULT = ["✅","📌","❗","⭐","🔥"];
+    const instances = [];
+    let memEmojis = null;
+
+    function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+    function looksHtml(s){ return HTML_RE.test(s||""); }
+    const MAP = { b:"b", strong:"b", i:"i", em:"i", u:"u", s:"s", strike:"s", del:"s", br:"br", div:"div", p:"div" };
+    function walk(src, dst){
+      src.childNodes.forEach(n=>{
+        if(n.nodeType===3){ dst.appendChild(document.createTextNode(n.nodeValue)); return; }
+        if(n.nodeType!==1) return;
+        const tag = n.tagName.toLowerCase();
+        if(tag==="script" || tag==="style") return;
+        const to = MAP[tag];
+        if(!to){ walk(n, dst); return; }          // 허용하지 않는 태그는 벗겨내고 내용만 유지
+        const el = document.createElement(to);
+        if(to!=="br") walk(n, el);
+        dst.appendChild(el);
+      });
+    }
+    function sanitize(html){
+      const doc = new DOMParser().parseFromString("<body>"+(html||"")+"</body>", "text/html");
+      const out = document.createElement("div");
+      walk(doc.body, out);
+      return out.innerHTML;
+    }
+    function toHtml(v){
+      if(v==null || v==="") return "";
+      v = String(v);
+      return looksHtml(v) ? sanitize(v) : esc(v).replace(/\r?\n/g,"<br>");
+    }
+    function toText(v){
+      if(!looksHtml(v)) return v||"";
+      const d = document.createElement("div");
+      d.innerHTML = sanitize(v);
+      d.querySelectorAll("br").forEach(b=> b.replaceWith("\n"));
+      d.querySelectorAll("div").forEach(b=> b.insertAdjacentText("afterend","\n"));
+      return d.textContent;
+    }
+    function trimEnd(h){ return h.replace(/(\s|<br>|<div><br><\/div>|<div><\/div>)+$/,""); }
+
+    function getEmojis(){
+      try{
+        const raw = localStorage.getItem(EMOJI_KEY);
+        if(raw){ const a = JSON.parse(raw); if(Array.isArray(a)) return a.slice(0,EMOJI_MAX); }
+      }catch(e){}
+      return memEmojis ? memEmojis.slice() : EMOJI_DEFAULT.slice();
+    }
+    function setEmojis(a){
+      memEmojis = a.slice(0,EMOJI_MAX);
+      try{ localStorage.setItem(EMOJI_KEY, JSON.stringify(memEmojis)); }catch(e){}
+      instances.forEach(i=> i.renderPanel());
+    }
+
+    function mount(ta){
+      if(!ta || ta._rx) return;
+      const wrap = document.createElement("div");
+      wrap.className = "rx-wrap";
+      wrap.innerHTML = `
+        <div class="rx-toolbar">
+          <button type="button" class="rx-btn" data-cmd="bold" title="굵게"><b>B</b></button>
+          <button type="button" class="rx-btn" data-cmd="italic" title="기울임"><i>I</i></button>
+          <button type="button" class="rx-btn" data-cmd="underline" title="밑줄"><u>U</u></button>
+          <button type="button" class="rx-btn" data-cmd="strikeThrough" title="취소선"><s>S</s></button>
+          <span class="rx-sep"></span>
+          <button type="button" class="rx-btn rx-emoji-btn" title="자주 쓰는 이모지">😀</button>
+        </div>
+        <div class="rx-emoji-panel" style="display:none;"></div>
+        <div class="rx-editor rx-empty" contenteditable="true" role="textbox" aria-multiline="true"></div>`;
+      ta.parentNode.insertBefore(wrap, ta);
+      ta.style.display = "none";
+      ta._rx = true;
+      const ed = wrap.querySelector(".rx-editor");
+      const panel = wrap.querySelector(".rx-emoji-panel");
+      ed.dataset.ph = ta.getAttribute("placeholder") || "";
+      ed.style.minHeight = (ta.dataset.minh || (ta.id==="post-caption" ? 160 : (ta.rows>=5 ? 120 : 90))) + "px";
+
+      const syncEmpty = ()=> ed.classList.toggle("rx-empty", !ed.textContent.trim());
+      Object.defineProperty(ta, "value", {
+        configurable:true,
+        get(){ const h = trimEnd(sanitize(ed.innerHTML)); return toText(h).trim() ? h : ""; },
+        set(v){ ed.innerHTML = toHtml(v); syncEmpty(); }
+      });
+      ed.addEventListener("input", syncEmpty);
+      ed.addEventListener("paste", e=>{
+        e.preventDefault();
+        const t = (e.clipboardData || window.clipboardData).getData("text/plain");
+        document.execCommand("insertText", false, t);
+      });
+      const applyDisabled = ()=>{
+        const dis = ta.hasAttribute("disabled");
+        ed.contentEditable = dis ? "false" : "true";
+        wrap.classList.toggle("rx-disabled", dis);
+      };
+      new MutationObserver(applyDisabled).observe(ta, { attributes:true, attributeFilter:["disabled"] });
+      applyDisabled();
+
+      /* 서식 버튼 */
+      let saved = null;
+      const saveRange = ()=>{
+        const sel = window.getSelection();
+        if(sel.rangeCount && ed.contains(sel.anchorNode)) saved = sel.getRangeAt(0).cloneRange();
+      };
+      ["keyup","mouseup","blur"].forEach(ev=> ed.addEventListener(ev, saveRange));
+      document.addEventListener("selectionchange", ()=>{ if(document.activeElement===ed) saveRange(); });
+      const refreshActive = ()=>{
+        wrap.querySelectorAll(".rx-btn[data-cmd]").forEach(b=>{
+          let on = false;
+          try{ on = document.activeElement===ed && document.queryCommandState(b.dataset.cmd); }catch(e){}
+          b.classList.toggle("on", !!on);
+        });
+      };
+      document.addEventListener("selectionchange", ()=>{ if(document.activeElement===ed) refreshActive(); });
+      wrap.querySelectorAll(".rx-btn[data-cmd]").forEach(btn=>{
+        btn.addEventListener("mousedown", e=> e.preventDefault());
+        btn.addEventListener("click", ()=>{
+          ed.focus();
+          document.execCommand(btn.dataset.cmd, false, null);
+          refreshActive();
+        });
+      });
+
+      /* 이모지 패널 */
+      let editMode = false, editIdx = -1;
+      function insertEmoji(em){
+        ed.focus();
+        const sel = window.getSelection();
+        if(saved){ sel.removeAllRanges(); sel.addRange(saved); }
+        else { const r = document.createRange(); r.selectNodeContents(ed); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); }
+        document.execCommand("insertText", false, em);
+        saveRange(); syncEmpty();
+      }
+      function renderPanel(){
+        const list = getEmojis();
+        panel.innerHTML = `
+          <div class="rx-emoji-list"></div>
+          <div class="rx-emoji-foot">
+            <input type="text" class="rx-emo-input" maxlength="8" placeholder="이모지 입력">
+            <button type="button" class="rx-mini primary rx-emo-save"></button>
+            <button type="button" class="rx-mini rx-emo-cancel" style="display:none;">취소</button>
+            <button type="button" class="rx-mini rx-emo-edit">${editMode ? "편집 완료" : "편집"}</button>
+            <span class="rx-count">${list.length}/${EMOJI_MAX}</span>
+          </div>
+          <div class="rx-hint">${editMode ? "이모지를 누르면 수정, ✕를 누르면 삭제돼요." : "이모지를 누르면 커서 위치에 들어가요."}</div>`;
+        const box = panel.querySelector(".rx-emoji-list");
+        list.forEach((em, i)=>{
+          const b = document.createElement("button");
+          b.type = "button"; b.className = "rx-emo" + (editMode && editIdx===i ? " sel" : "");
+          b.textContent = em;
+          if(editMode){
+            const x = document.createElement("span"); x.className = "rx-x"; x.textContent = "✕";
+            x.addEventListener("click", ev=>{ ev.stopPropagation(); const a = getEmojis(); a.splice(i,1); editIdx = -1; setEmojis(a); });
+            b.appendChild(x);
+          }
+          b.addEventListener("mousedown", e=> e.preventDefault());
+          b.addEventListener("click", ()=>{
+            if(editMode){ editIdx = i; renderPanel(); const inp = panel.querySelector(".rx-emo-input"); inp.value = em; inp.focus(); }
+            else insertEmoji(em);
+          });
+          box.appendChild(b);
+        });
+        if(!list.length){ box.innerHTML = '<span style="color:#8A8A8A;">등록된 이모지가 없어요. 아래에서 추가해 주세요.</span>'; }
+        const inp = panel.querySelector(".rx-emo-input");
+        const saveBtn = panel.querySelector(".rx-emo-save");
+        const cancelBtn = panel.querySelector(".rx-emo-cancel");
+        const editing = editMode && editIdx>=0;
+        saveBtn.textContent = editing ? "수정" : "추가";
+        cancelBtn.style.display = editing ? "" : "none";
+        if(!editing && list.length>=EMOJI_MAX){ saveBtn.disabled = true; inp.disabled = true; inp.placeholder = "최대 10개"; }
+        const commit = ()=>{
+          const v = inp.value.trim();
+          if(!v) return;
+          const a = getEmojis();
+          if(editing) a[editIdx] = v; else if(a.length<EMOJI_MAX) a.push(v); else return;
+          editIdx = -1; setEmojis(a);
+        };
+        saveBtn.addEventListener("click", commit);
+        inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); e.stopPropagation(); commit(); } });
+        cancelBtn.addEventListener("click", ()=>{ editIdx = -1; renderPanel(); });
+        panel.querySelector(".rx-emo-edit").addEventListener("click", ()=>{ editMode = !editMode; editIdx = -1; renderPanel(); });
+      }
+      wrap.querySelector(".rx-emoji-btn").addEventListener("mousedown", e=> e.preventDefault());
+      wrap.querySelector(".rx-emoji-btn").addEventListener("click", ()=>{
+        const open = panel.style.display === "none";
+        panel.style.display = open ? "" : "none";
+        if(open){ editMode = false; editIdx = -1; renderPanel(); }
+      });
+      instances.push({ renderPanel: ()=>{ if(panel.style.display !== "none") renderPanel(); } });
+    }
+    return { mount, html: toHtml, text: toText, sanitize };
+  })();
+
+  /* 입력칸에 서식 도구 연결 */
+  ["req-content","sch-content","memo-content"].forEach(id=> RTE.mount(document.getElementById(id)));
+  const reqEditor = document.getElementById("req-content");
 
   /* ---------------- TABS ---------------- */
   document.querySelectorAll(".tab-btn").forEach(btn=>{
@@ -1739,7 +1949,7 @@
     editingRequestId = null;
     document.getElementById("request-modal-title").textContent = "새 요청 추가";
     document.getElementById("request-form").reset();
-    reqEditor.innerHTML = "";
+    reqEditor.value = "";
     currentLinks = [];
     renderLinkRows();
     openModal("request-modal");
@@ -1750,7 +1960,7 @@
     document.getElementById("req-dept").value = r.dept;
     document.getElementById("req-requester").value = r.requester||"";
     document.getElementById("req-title").value = r.title||"";
-    reqEditor.innerHTML = r.content||"";
+    reqEditor.value = r.content||"";
     document.getElementById("req-due").value = r.due||"";
     document.getElementById("req-assignee").value = r.assignee||"";
     document.getElementById("req-priority").value = r.priority||"mid";
@@ -1766,7 +1976,7 @@
     const links = currentLinks
       .map(l=>({ type:l.type, url:(l.url||"").trim() }))
       .filter(l=>l.url);
-    const contentHtml = stripHtml(reqEditor.innerHTML).trim() ? reqEditor.innerHTML.trim() : "";
+    const contentHtml = reqEditor.value;
 
     if(editingRequestId){
       const row = {
@@ -1954,7 +2164,7 @@
       const start = s.startDate||s.date, end = s.endDate||start;
       body.innerHTML = `
         <div class="detail-title"><span class="dept-dot" style="width:10px;height:10px;background:${resolveScheduleColor(s.color)};"></span>${escapeHtml(s.title)}</div>
-        ${s.content ? `<div class="detail-content-label">내용</div><div class="detail-content-box">${escapeHtml(s.content)}</div>` : ``}
+        ${s.content ? `<div class="detail-content-label">내용</div><div class="detail-content-box rich">${RTE.html(s.content)}</div>` : ``}
         <div class="detail-meta-grid">
           <div class="detail-meta-cell${s.requester?"":" full"}"><div class="k">${end!==start ? "기간" : "날짜"}</div><div class="v">${end!==start ? `${start} ~ ${end}` : start}</div></div>
           ${s.requester ? `<div class="detail-meta-cell"><div class="k">요청자</div><div class="v">${escapeHtml(s.requester)}</div></div>` : ``}
@@ -1978,7 +2188,7 @@
           <span class="status-pill status-${r.status}">${STATUS_LABEL[r.status]}</span>
         </div>
         <div class="detail-title${r.status==="done"?" done-item":""}">${escapeHtml(r.title)}</div>
-        ${r.content && stripHtml(r.content).trim() ? `<div class="detail-content-label">내용</div><div class="detail-content-box rich">${r.content}</div>` : ``}
+        ${r.content && stripHtml(r.content).trim() ? `<div class="detail-content-label">내용</div><div class="detail-content-box rich">${RTE.html(r.content)}</div>` : ``}
         <div class="detail-meta-grid">
           ${r.requester ? `<div class="detail-meta-cell"><div class="k">요청자</div><div class="v">${escapeHtml(r.requester)}</div></div>` : ``}
           ${r.assignee ? `<div class="detail-meta-cell"><div class="k">담당자</div><div class="v">${escapeHtml(r.assignee)}</div></div>` : ``}
